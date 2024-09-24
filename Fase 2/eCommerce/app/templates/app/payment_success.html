@@ -1,0 +1,98 @@
+{% extends 'app/base.html' %}
+
+{% load static %}
+
+{% block css %}
+<title>Conejo Furioso</title>
+<style>
+    .success-message {
+        border: 1px solid #28a745;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<br><br><br>
+<div class="container mt-5">
+    <div class="success-message">
+        <h1>Orden de compra exitosa</h1>
+        <p>¡Solo un poco más! ¡Eligamos el medio de pago para esa orden!</p>
+    </div>
+
+
+
+    <div class="container p-4 text-center">
+        <div class="d-inline-block">
+            <div id="paypal-button-container"></div>
+            <script src="https://www.paypal.com/sdk/js?client-id=AdFjGOwJCh4h90IyhB_vGCkDbSfakAD6IitR2qFxPOgTtY4Yrd9z_-ycN6ITScW8rqkiDh7EDtOZ8eFs"></script>
+            <script>
+                paypal.Buttons({
+                    createOrder: function (data, actions) {
+                        return actions.order.create({
+                            purchase_units: [{
+                                amount: {
+                                    value: convertToUSD('{{ cart_total }}')
+                                }
+                            }]
+                        });
+                    },
+                    onApprove: (data, actions) => {
+                        return actions.order.capture().then(function(orderData) {
+                            // Successful capture! For dev/demo purposes:
+                            console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
+                            const transaction = orderData.purchase_units[0].payments.captures[0];
+                            alert('Pago exitoso');
+                            alert(`Transaction ${transaction.status}: ${transaction.id}\n\nSee console for all available details`);
+                            // When ready to go live, remove the alert and show a success message within this page. For example:
+                            // const element = document.getElementById('paypal-button-container');
+                            // element.innerHTML = '<h3>Thank you for your payment!</h3>';
+                            actions.redirect('home');
+                        });
+                    }
+                }).render('#paypal-button-container');
+            </script>
+        </div>
+    </div>
+    
+</div>
+</div>
+
+</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+
+<script>
+    // Función para actualizar el estado de pago de la última orden en Django
+    // Función para convertir el total de CLP a dólares
+    function convertToUSD(totalCLP) {
+        // Tasa de conversión: 1 CLP = 0.0014 USD (valor de ejemplo)
+        var conversionRate = 0.00124;
+        var totalUSD = totalCLP * conversionRate;
+        return totalUSD.toFixed(2);
+    }
+
+    // Obtener el total en CLP desde la variable de contexto
+    var totalCLP = parseInt("{{ cart_total }}");
+
+    // Calcular el total en USD llamando a la función de conversión
+    var totalUSD = convertToUSD(totalCLP);
+
+    // Mostrar los totales en la página
+    document.getElementById("cart-total-clp").textContent = totalCLP;
+    document.getElementById("cart-total").textContent = totalUSD;
+</script>
+
+</html>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container my-5" style="max-width: 600px;">
+    <div style="display: flex; justify-content: center; align-items: center;">
+        <div class="my-5"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header card-header-form">
+            <center><h3>Agregar Tipo de consulta</h3></center> 
+        </div>
+        <div class="card-body">
+            <blockquote class="blockquote mb-0">
+                <form action="" class="form" method="post" enctype="multipart/form-data">
+
+                    {% csrf_token %}
+
+                    {{ form|crispy }}
+                    <center><button type="submit" class="btn bg-primary mt-3">Agregar</button></center>
+
+                </form>
+                {{message}}
+            </blockquote>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

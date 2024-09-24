@@ -1,0 +1,155 @@
+{% extends 'app/base.html' %}
+
+{% load static %}
+
+{% block css %}
+<title>Conejo Furioso</title>
+<style>
+    .cart-table {
+      border: 12px solid hwb(6 6% 16%);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<style>
+    .cart-table {
+      border: 12px solid hwb(90 58% 9%);
+    }
+  </style>
+<div class="alert alert-secondary my-5" role="alert"></div>
+<table class="table table-bordered table-hover table-responsive-sm cart-table">
+   
+    <thead>
+        <tr>
+            <h2 style="text-align: center; justify-content: center;" class="my-2">Información de Pago</h1>
+                <br>
+        </tr>
+        <tr>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if request.session.cart.items %}
+        {% for key, value in request.session.cart.items %}
+        <tr>
+            <td><strong>{{ value.product_name }}</strong></td>
+            <td>{{ value.product_price }}</td>
+            <td>{{ value.amount }}</td>
+            <td>{{ value.accumulated }}</td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+            <td colspan="4">
+                <div class="alert alert-danger text-center">Sin Productos</div>
+            </td>
+        </tr>
+        {% endif %}
+        <tr>
+            <th colspan="3" class="text-right">Total Compra (CLP):</th>
+            <th id="cart-total-clp">{{ cart_total }}</th>
+        </tr>
+        <tr>
+            <th colspan="3" class="text-right">Total Compra (USD):</th>
+            <th id="cart-total">{{ cart_total }}</th>
+        </tr>
+    </tbody>
+</table>
+</div>
+<br><br>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h2>Datos del comprador</h2>
+
+            <form method="POST" action="{% url 'payment_success' %}">
+                {% csrf_token %}
+                <div class="form-group row">
+                    <label for="id_user" class="col-sm-2 col-form-label">Usuario</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="id_user" name="user" value="{{ user.username }}" readonly>
+                    </div>
+                </div>
+                {% for key, value in request.session.cart.items %}
+                <div class="form-group row">
+                    <label for="product_{{ key }}" class="col-sm-2 col-form-label">Producto</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="product_{{ key }}" name="product_{{ key }}" value="{{ value.product_name }} - Cantidad: {{ value.amount }}" readonly>
+                    </div>
+                </div>
+                {% endfor %}
+
+                
+                <div class="form-group row">
+                    <label for="id_name" class="col-sm-2 col-form-label">Nombre</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="id_name" name="name">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="id_adress" class="col-sm-2 col-form-label">Dirección</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="address" name="address">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="id_telefono" class="col-sm-2 col-form-label">Teléfono</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="phone" name="phone">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="id_total_clp" class="col-sm-2 col-form-label">Total CLP</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="accumulated" name="accumulated" value="{{ cart_total }}" readonly>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-product">
+                    <span class="glyphicon glyphicon-shopping-cart"></span> Realizar Pago
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+          
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script>
+ // Función para actualizar el estado de pago de la última orden en Django
+function updateLastOrderPaidStatus(user) {
+// Realizar una redirección a la URL correspondiente en Django para actualizar el estado de pago
+ window.location.href = "/update_last_order_paid_status/";
+            }
+// Función para convertir el total de CLP a dólares
+function convertToUSD(totalCLP) {
+// Tasa de conversión: 1 CLP = 0.0014 USD (valor de ejemplo)
+var conversionRate = 0.00124;
+var totalUSD = totalCLP * conversionRate;
+return totalUSD.toFixed(2);
+}
+
+// Obtener el total en CLP desde la variable de contexto
+var totalCLP = parseInt("{{ cart_total }}");
+
+// Calcular el total en USD llamando a la función de conversión
+var totalUSD = convertToUSD(totalCLP);
+
+// Mostrar los totales en la página
+document.getElementById("cart-total-clp").textContent = totalCLP;
+document.getElementById("cart-total").textContent = totalUSD;
+</script>
+
+</html>
+{% endblock %}

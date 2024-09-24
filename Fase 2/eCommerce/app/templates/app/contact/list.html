@@ -1,0 +1,129 @@
+{% extends 'app/base.html' %}
+
+{% block js %}
+<!-- <script>
+    function delete_Contact(id){
+        Swal.fire({
+            "title": "Seguro?",
+            "text":"esta accion es permanente",
+            "icon":"question",
+            "showCancelButton":true,
+            "cancelButtonText":"No, Cancelar",
+            "confirmButtonText":"Si, Eliminar",
+            "reverseButtons":true,
+            "confirmButtonColor":"#dc3545"
+        })
+        .then(function(result){
+            if(result.isConfirmed){
+                window.location.href = "/delete-contact/"+id+"/"
+            }
+        })
+    }
+</script> -->
+
+{% endblock %}
+
+{% load static %}
+
+{% block content %}
+{% load humanize %}
+
+<br><br><br>
+<div class="container my-5">
+    <br><br>
+    <div class="card">
+        <div class="card-body">
+            <center>
+                <h2>Lista de Contactos</h2>
+            </center>
+            <hr>
+            <div class="table-responsive">
+                <table id="productTable" class="table table-striped table-hover table-responsive-sm">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Celular</th>
+                            <th>Mensaje</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+
+                    {% for c in entity %}
+                    <tr>
+                        <td>{{ c.name | title }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.phone }}</td>
+                        <td>{{ c.message }}</td>
+                        <td>{{ c.query_type_name }}</td>
+                        <td>
+                            <form method="POST" action="{% url 'update_status' c.id %}">
+                                {% csrf_token %}
+                                <select name="status" onchange="this.form.submit()">
+                                    <option value="Nuevo" {% if c.status == 'Nuevo' %}selected{% endif %}>Nuevo</option>
+                                    <option value="En progreso" {% if c.status == 'En progreso' %}selected{% endif %}>En progreso</option>
+                                    <option value="Finalizado" {% if c.status == 'Finalizado' %}selected{% endif %}>Finalizado</option>
+                                </select>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </table>
+                <hr>
+                <div>
+                    {% include 'app/paginator.html' %}
+                </div>
+            </div>
+
+            <br>
+            <div class="row list-buttons">
+
+                <div class="col">
+                    <a href="{% url 'home' %}">
+                        <button class="btn btn-default bg-primary-3" type="button">Volver al Inicio</button>
+                    </a>
+                </div>
+
+                <div class="col">
+
+                </div>
+
+                <div class="col">
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'core/js/jquery-3.6.0.js'%}"></script>
+<script>
+    $(document).ready(function () {
+        $('.update-status-btn').click(function () {
+            var contactId = $(this).data('contact-id');
+            var newStatus = $(this).data('status');
+
+            $.ajax({
+                url: '/api/contact/' + contactId + '/',
+                method: 'PATCH',
+                data: { 'status': newStatus },
+                success: function (response) {
+                    // Actualizar el estado en la tabla
+                    $('[data-contact-id="' + contactId + '"]').closest('tr').find('td:eq(5)').text(newStatus);
+                },
+                error: function (xhr, status, error) {
+                    console.log(error);
+                }
+            });
+        });
+    });
+</script>
+
+
+{% endblock %}

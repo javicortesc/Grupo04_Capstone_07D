@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% load static %}
+  {% load auth_extras %}
+  {% block css %}
+  {% endblock %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+
+  <link rel="stylesheet" href="{% static 'app/css/styles.css' %}">
+
+
+
+</head>
+
+
+<body>
+  <div class="header">
+    <header>
+      <nav class="navbar navbar-expand-lg fixed-top bg-primary">
+        <div class="container">
+          <a class="navbar-brand" href="{% url 'home' %}">
+            <img src="{% static 'app/img/logo.png' %}" alt="Bootstrap" width="75" height="60">
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="{% url 'home' %}">INICIO</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'catalogue' %}">CATÁLOGO</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'rental_service' %}">SERVICIOS</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'contact' %}">CONTACTO</a>
+              </li>
+            </ul>
+
+
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown"
+                aria-expanded="false">ADMINISTRACIÓN</a>
+              <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                <li><a class="dropdown-item" href="{% url 'list_product' %}">Productos</a></li>
+                <li><a class="dropdown-item" href="{% url 'list_category' %}">Categorías</a></li>
+                <li><a class="dropdown-item" href="{% url 'list_contact' %}">Contactos</a></li>
+                <li><a class="dropdown-item" href="{% url 'list_query_type' %}">Tipo Consulta</a></li>
+                <li><a class="dropdown-item" href="{% url 'order_list' %}">Ordenes</a></li>
+                <li><a class="dropdown-item" href="{% url 'list_rental_order' %}">Orden de renta</a></li>
+              </ul>
+            </div>
+
+
+            {% if user.is_authenticated %}
+            <input type="hidden" id="is-authenticated" value="{{ user.is_authenticated }}">
+            <div class="nav-item logout">
+              <a id="logout-link" class="nav-link" href="{% url 'logout' %}">CERRAR SESIÓN</a>
+            </div>
+
+            <div class="nav-item username">
+              <a class="nav-link" href="#">@{{ user.username }}</a>
+            </div>
+            {% else %}
+            <div class="nav-item login">
+              <a class="nav-link" aria-current="page" href="{% url 'login' %}">INICIAR SESIÓN | REGISTRARSE</a>
+            </div>
+          </div>
+          {% endif %}
+          <button id="cart-toggle">Mostrar Carrito</button>
+        </div>
+  </div>
+  </nav>
+  </header>
+  </div>
+
+  <main class="bg-primary-2">
+
+    <div id="cart" class="cart-container">
+      <button id="cart-close" class="cart-close-button">X</button>
+      <div class="alert alert-secondary my-5" role="alert">
+        <table class="table table-bordered table-hover table-responsive-sm">
+          <thead>
+            <tr>
+              <h2 style="text-align: center; justify-content: center;" class="my-2">Carrito</h1>
+                <br>
+            </tr>
+            <tr>
+              <th>Nombre</th>
+              <th>Precio</th>
+              <th>Cantidad</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if request.session.cart.items %}
+            {% for key, value in request.session.cart.items %}
+            <tr>
+              <td><strong>{{value.product_name}}</strong></td>
+              <td>{{value.product_price}}</td>
+              <td>{{value.amount}}
+                <a href="{% url 'Add' value.product_id %}" class="badge btn btn-dark badge-dark">+</a>
+                <a href="{% url 'Sub' value.product_id %}" class="badge btn btn-dark badge-dark">-</a>
+              </td>
+              <td>{{value.accumulated}}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+              <td colspan="4">
+                <div class="alert alert-danger text-center">Sin Productos</div>
+              </td>
+            </tr>
+            {% endif %}
+            <tr>
+              <th colspan="3" class="text-right">Total Compra:</th>
+              <th>$ {{cart_total}}</th>
+            </tr>
+          </tbody>
+
+        </table>
+        <hr>
+        <div class="row text-center">
+          <div class="col-6"><a href="{% url 'Clean' %}" class="btn btn-default bg-primary-3">Limpiar</a></div>
+          <div class="col-6"><a href="{% url 'pago' %}" class="btn btn-default bg-primary-3 add-to-cart-btn">Pagar</a></div>
+        </div>
+      </div>
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Aquí todo lo correspondiente al footer -->
+  </main>
+  <footer class="text-light mt-auto">
+    <div class="container">
+      <div class="row py-2">
+        <div class="col-1 col-sm-12">
+          <div class="ft-item">
+            <a class="ft-link" href="https://www.instagram.com/cervezaconejofurioso/">Instagram</a>
+          </div>
+        </div>
+        <div class="col-1 col-sm-12">
+          <div class="ft-item">
+            <a class="ft-link" href="https://www.facebook.com/CervezaConejoFurioso">Facebook</a>
+          </div>
+        </div>
+        <div class="row mt-2" style="font-weight: bold;">
+          &copy; 2023 - Ⓡ Conejo Furioso. Todos los derechos reservados.
+        </div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+    crossorigin="anonymous"></script>
+    
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+  {% if messages %}
+  {% for m in messages %}
+  {% if m.tags == 'confirm' %}
+  <script>
+    Swal.fire({
+      title: "Confirmación",
+      text: "{{ m }}",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí",
+      cancelButtonText: "No"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Lógica para eliminar el producto
+        // Puedes realizar una petición AJAX o redirigir a una URL específica
+      } else {
+        // Lógica si el usuario cancela la eliminación
+      }
+    });
+  </script>
+  {% else %}
+  <script>
+    Swal.fire({
+      title: "{% if m.tags == 'success' %}Felicitaciones{% else %}Error{% endif %}",
+      text: "{{ m }}",
+      icon: "{% if m.tags == 'success' %}success{% else %}error{% endif %}"
+    });
+  </script>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+
+  {% block js %}
+  {% endblock %}
+
+  <script src="{% static 'app/js/base.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,159 @@
+{% extends 'app/base.html' %}
+
+{% load static %}
+
+{% block content %}
+{% load humanize %}
+
+<br><br><br>
+<div class="container my-5">
+    <br><br>
+    <div class="card">
+        <div class="card-body">
+            <center>
+                <h2>Lista de Ordenes</h2>
+            </center>
+            <hr>
+            <div class="table-responsive">
+                <!-- Formulario de filtros -->
+                <form method="GET" action="{% url 'order_list' %}">
+                    <div class="row mt-1 mb-3">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="start_date">Fecha inicial:</label>
+                                <input type="date" id="start_date" name="start_date" class="form-control"
+                                    value="{{ request.GET.start_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="end_date">Fecha final:</label>
+                                <input type="date" id="end_date" name="end_date" class="form-control"
+                                    value="{{ request.GET.end_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="order_item_name">Nombre de OrderItem:</label>
+                                <input type="text" id="order_item_name" name="order_item_name" class="form-control"
+                                    value="{{ request.GET.order_item_name }}">
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-primary form-control" type="submit">Filtrar</button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <a href="{% url 'order_list' %}" class="btn btn-secondary form-control">Limpiar
+                                    filtros</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <!-- Fin del formulario de filtros -->
+
+                <table id="productTable" class="table table-striped table-hover table-responsive-sm">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Numero de orden</th>
+                            <th>Nombre</th>
+                            <th>Direccion</th>
+                            <th>Celular</th>
+                            <th>Acumulado</th>
+                            <th>Pagado</th>
+                            <th>Fecha</th>
+                            <th>Order Items</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in entity %}
+                        <tr>
+                            {% if o.user.username %}
+                            <td>{{ o.user.username }}</td>
+                            {% else %}
+                            <td>N/A</td>
+                            {% endif %}
+
+                            <td>{{ o.order_id }}</td>
+
+                            {% if o.name %}
+                            <td>{{ o.name }}</td>
+                            {% else %}
+                            <td>N/A</td>
+                            {% endif %}
+
+                            {% if o.address %}
+                            <td>{{ o.address }}</td>
+                            {% else %}
+                            <td>N/A</td>
+                            {% endif %}
+
+                            {% if o.phone %}
+                            <td>{{ o.phone }}</td>
+                            {% else %}
+                            <td>N/A</td>
+                            {% endif %}
+
+                            <td>{{ o.accumulated | intcomma }}</td>
+
+                            {% if o.pagado %}
+                            <td>Si</td>
+                            {% else %}
+                            <td>No</td>
+                            {% endif %}
+
+                            <td>{{ o.fecha }}</td>
+
+                            <td>
+                                <ul>
+                                    {% for item in o.orderitem_set.all %}
+                                    <li>{{ item.product_name }} - Cantidad: {{ item.amount }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="total-accumulated">
+                    <h4>Total acumulado de todas las órdenes: $ {{ total_accumulated }}</h4>
+                    <h4>Total de productos vendidos: {{ total_products_sold }}</h4>
+                </div>
+
+                <div class="top-products">
+                    <h3>Productos más vendidos:</h3>
+                    <ul>
+                        {% for product in top_products %}
+                        <li>{{ product.product_name }} - Cantidad vendida: {{ product.total_amount }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <hr>
+                <div>
+                    {% include 'app/paginator.html' %}
+                </div>
+            </div>
+
+            <br>
+            <div class="row list-buttons">
+                <div class="col">
+                    <a href="{% url 'home' %}">
+                        <button class="btn btn-default bg-primary-3" type="button">Volver al Inicio</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{% static 'core/js/jquery-3.6.0.js'%}"></script>
+
+{% endblock %}

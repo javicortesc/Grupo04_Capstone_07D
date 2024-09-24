@@ -1,0 +1,78 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block tittle_css %}
+<title>Catalogo | Conejo Furioso</title>
+{% endblock %}
+
+{% block content %}
+
+<br>
+<br>
+<br>
+
+<div class="container my-5" style="max-width: 600px;">
+    <div style="display: flex; justify-content: center; align-items: center;">
+        <h1 class="my-5">CONTÁCTANOS</h1>
+    </div>
+
+    <div class="card">
+        <div class="card-header card-header-form">
+            Envíanos un mensaje y te contactaremos !
+        </div>
+        <div class="card-body">
+            <blockquote class="blockquote mb-0">
+                <form id="contact-form" class="form">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            {{ field|as_crispy_field }}
+                            {% if field.errors %}
+                                <ul class="errorlist">
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <center><button type="submit" class="btn btn-default bg-primary-3 mt-3">Enviar</button></center>
+                </form>
+                {{ message }}
+            </blockquote>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('contact-form').addEventListener('submit', function(event) {
+        event.preventDefault();  // Evitar que el formulario se envíe directamente
+
+        var form = new FormData(this);  // Obtener los datos del formulario
+
+        // Realizar la solicitud POST a la API
+        // la url es generada automaticamente por el router de contact
+        fetch("{% url 'contact-list' %}", {
+            method: "POST",
+            body: form
+        })
+        .then(response => {
+            if (response.ok) {
+                // La solicitud fue exitosa
+                // Realizar cualquier acción adicional o mostrar un mensaje de éxito
+                alert("Mensaje enviado correctamente");
+            } else {
+                // La solicitud falló
+                // Realizar cualquier acción adicional o mostrar un mensaje de error
+                alert("Error al enviar el mensaje");
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            // Realizar cualquier acción adicional o mostrar un mensaje de error
+            alert("Error al enviar el mensaje");
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title_css %}
+<title>Arrienda tu barril! | Conejo Furioso</title>
+{% endblock %}
+
+{% block js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkbox = document.getElementById('termsCheckbox');
+    const formContainer = document.getElementById('formContainer');
+    const imageContainer = document.getElementById('imageContainer');
+
+    checkbox.addEventListener('change', function () {
+      if (checkbox.checked) {
+        formContainer.style.display = 'block';
+        imageContainer.style.display = 'none';
+      } else {
+        formContainer.style.display = 'none';
+        imageContainer.style.display = 'block';
+      }
+    });
+
+    const checkboxList = document.querySelectorAll('.product-checkbox');
+    const form = document.getElementById('rentalForm');
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault(); // Evitar el envío del formulario
+
+      const selectedProducts = Array.from(checkboxList)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => parseInt(checkbox.dataset.productId)); // Convertir el ID del producto a entero
+
+      if (selectedProducts.length === 0) {
+        Swal.fire('Error', 'Debes seleccionar al menos un producto', 'error');
+      } else {
+        // Remover los campos ocultos existentes antes de agregar los nuevos
+        const existingProductInputs = document.querySelectorAll('input[name="products"]');
+        existingProductInputs.forEach(input => input.remove());
+
+        // Crear un campo oculto para cada producto seleccionado
+        selectedProducts.forEach(productId => {
+          const productInput = document.createElement('input');
+          productInput.setAttribute('type', 'hidden');
+          productInput.setAttribute('name', 'products');
+          productInput.setAttribute('value', productId);
+          form.appendChild(productInput);
+        });
+
+        // Enviar el formulario a través de AJAX
+        const formData = new FormData(form);
+        fetch(form.action, {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => handleFormResponse(data))
+        .catch(error => {
+          console.error('Error en la solicitud:', error);
+          Swal.fire('Error', 'Error en el servidor', 'error');
+        });
+      }
+    });
+  });
+
+  // Función para manejar las respuestas del formulario
+  function handleFormResponse(response) {
+    if (response.message) {
+      Swal.fire('Éxito', response.message, 'success').then(() => {
+        location.reload(); // Recargar la página después de mostrar el mensaje
+      });
+    } else if (response.error) {
+      Swal.fire('Error', response.error, 'error');
+    }
+  }
+</script>
+{% endblock %}
+
+{% block content %}
+{% load humanize %}
+<br><br><br>
+<div class="container my-5">
+  <section class="pb-5">
+    <h1 class="text-center py-5">ARRIENDA UN BARRIL CERVECERO!</h1>
+    <div class="row justify-content-center">
+      {% for p in products %}
+      <div class="col-xxl-3 col-xl-3 col-lg-4 col-md-6">
+        <div class="card card-home">
+          {% if p.image %}
+          <img src="{{ p.image }}" class="card-img-top" alt="...">
+          {% else %}
+          <div class="missing-image">Imagen no disponible</div>
+          {% endif %}
+          <div class="card-body d-flex flex-column align-items-center">
+            <div class="text-center">
+              <h5 class="card-title custom-card-title">{{ p.name | capfirst }}</h5>
+            </div>
+            <p class="card-text custom-card-description">Disponible:{{ p.stock}}</p>
+            <div class="mt-auto text-center">
+              <p class="card-text price"><b> ${{ p.price | intcomma }}</b></p>
+              <div class="form-check">
+                <input class="form-check-input product-checkbox" type="checkbox" id="productCheckbox{{ p.id }}"
+                  value="{{ p.id }}" data-product-id="{{ p.id }}">
+                <label class="form-check-label" for="productCheckbox{{ p.id }}">
+                  Seleccionar
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="container my-5">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card card-terms">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title text-center my-5">Términos y Condiciones</h5>
+          <ol class="mt-4">
+            <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
+            <li>Nulla condimentum mauris non velit sagittis, at rutrum justo fringilla.</li>
+            <li>Morbi sit amet lectus at neque rutrum facilisis.</li>
+            <li>Donec a velit ut risus consequat varius nec vitae nunc.</li>
+            <li>Proin quis leo rutrum, rhoncus est at, interdum purus.</li>
+            <li>Vestibulum a risus eu neque feugiat finibus.</li>
+            <li>Fusce a sem aliquam, feugiat tortor at, rhoncus mauris.</li>
+            <li>Quisque rutrum lorem nec diam venenatis viverra.</li>
+            <li>Sed eget ex consequat, cursus risus quis, vehicula sem.</li>
+            <li>Ut ac nunc id tellus tincidunt hendrerit.</li>
+          </ol>
+          <div class="mt-auto text-center d-flex justify-content-center">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="termsCheckbox">
+              <label class="form-check-label" for="termsCheckbox">
+                Acepto los términos y condiciones
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div id="formContainer" style="display: none;">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Formulario de Arriendo</h5>
+            <form id="rentalForm" action="{% url 'rental_service' %}" method="POST">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="rutInput" class="form-label">RUT</label>
+                <input type="text" class="form-control" id="rutInput" name="rut" placeholder="Ingrese su RUT">
+              </div>
+              <div class="mb-3">
+                <label for="nombreInput" class="form-label">Nombre Completo</label>
+                <input type="text" class="form-control" id="nombreInput" name="name"
+                  placeholder="Ingrese su nombre completo">
+              </div>
+              <div class="mb-3">
+                <label for="direccionInput" class="form-label">Dirección</label>
+                <input type="text" class="form-control" id="direccionInput" name="address"
+                  placeholder="Ingrese su dirección">
+              </div>
+              <div class="mb-3">
+                <label for="celularInput" class="form-label">Celular</label>
+                <input type="text" class="form-control" id="celularInput" name="phone"
+                  placeholder="Ingrese su número de celular">
+              </div>
+              <div class="mb-3">
+                <label for="fechaEntregaInput" class="form-label">Fecha de Entrega con Hora</label>
+                <input type="datetime-local" class="form-control" id="fechaEntregaInput" name="deliver_date">
+              </div>
+              <button type="submit" class="btn btn-primary">Enviar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div id="imageContainer" class="text-center">
+        <div style="display: flex;">
+          <img src="{% static 'app/img/quienes somos.webp' %}"
+            style="float: left; margin-right: 10px; margin-top: 12px; width: 630px; height: 530px;" alt="...">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
