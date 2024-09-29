@@ -6,30 +6,27 @@
 {% endblock %}
 
 {% block content %}
-
-{% load humanize %}
+    {% load humanize %}
     {% load crispy_forms_tags %}
     <br><br><br>
     <div class="container my-5">
-
         <div class="row">
             <div class="col-12 col-md-6 offset-md-3">
                 <div class="card">
                     <div class="card-body register">
-                        <h2>Registro de usuario </h2>
+                        <h2>Registro de usuario</h2>
                         <hr>
                         <form action="" method="post">
                             {% csrf_token %}
-                            {{form | crispy }}
-                            <a href="{% url 'home' %}" >Inicio</a> |
-                            <a href="{% url 'login' %}">Iniciar Sesión</a> 
+                            {{ form|crispy }}
+                            <a href="{% url 'home' %}">Inicio</a> |
+                            <a href="{% url 'login' %}">Iniciar Sesión</a>
                             <input type="submit" value="Registrar" class="btn btn-default float-right">
-                        </form>     
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
         <br><br><br><br>
-
     </div>
 {% endblock %}

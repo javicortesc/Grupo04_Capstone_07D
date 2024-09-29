@@ -60,17 +60,32 @@
             if (response.ok) {
                 // La solicitud fue exitosa
                 // Realizar cualquier acción adicional o mostrar un mensaje de éxito
-                alert("Mensaje enviado correctamente");
+                Swal.fire({
+                    title: "Mensaje enviado",
+                    text: "Tu mensaje ha sido enviado correctamente",
+                    icon: "success"
+                }).then(() => {
+                    // Redirigir al usuario al inicio
+                    window.location.href = "/";
+                });
             } else {
                 // La solicitud falló
                 // Realizar cualquier acción adicional o mostrar un mensaje de error
-                alert("Error al enviar el mensaje");
+                Swal.fire({
+                    title: "Error",
+                    text: "Hubo un error al enviar el mensaje",
+                    icon: "error"
+                });
             }
         })
         .catch(error => {
             console.error(error);
             // Realizar cualquier acción adicional o mostrar un mensaje de error
-            alert("Error al enviar el mensaje");
+            Swal.fire({
+                title: "Error",
+                text: "Hubo un error al enviar el mensaje",
+                icon: "error"
+            });
         });
     });
 </script>
