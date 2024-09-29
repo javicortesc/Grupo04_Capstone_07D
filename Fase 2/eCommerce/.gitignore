@@ -1,0 +1,11 @@
+# Archivo SQLite de la base de datos
+*.db.sqlite3
+
+# Archivos de caché
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyi
+*.pyz
+*.pyzw
