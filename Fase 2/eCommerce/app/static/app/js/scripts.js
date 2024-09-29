@@ -1,19 +1,5 @@
-//validadores de inicio de sesion
 $("#mensajeError").hide();
 $("#mensajeErrorPass").hide();
-$("#loginBTN").click(function() {
-    var correo = $("#userN").val();
-    if (correo != "") {
-        if ($("#pswrdN").val() != "") {
-            $("#mensajeError").hide();
-            $(location).prop('href', 'http://127.0.0.1:8000/Platos/')
-        } else {
-            $("#mensajeError").show();
-        }
-    } else {
-        $("#mensajeError").show();
-    }
-});
 
 //validador de creacion de usuarios
 $("#crearUsr").click(function() {
@@ -68,5 +54,28 @@ formulario.addEventListener('submit', (e) => {
     } else {
         alert("Correo Incorrecto")
         return false;
+    }
+});
+$("#loginBTN").click(function() {
+    var username = $("#userN").val();
+    var password = $("#pswrdN").val();
+
+    if (username && password) {
+        $.ajax({
+            url: '/api/token/',
+            type: 'POST',
+            data: { username: username, password: password },
+            success: function(response) {
+                var access_token = response.access_token;
+                // Guarda el token en el almacenamiento local (localStorage) o como prefieras.
+                // Redirige a la página de inicio.
+                window.location.href = '/home/';
+            },
+            error: function(xhr, status, error) {
+                // Maneja el error de autenticación.
+                console.error(error);
+                $("#mensajeError").show();
+            }
+        });
     }
 });

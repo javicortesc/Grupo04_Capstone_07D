@@ -1,29 +1,44 @@
 {% extends 'app/base.html' %}
 
+{% load static %}
+
 {% block js %}
-<!-- <script>
-    function delete_Contact(id){
-        Swal.fire({
-            "title": "Seguro?",
-            "text":"esta accion es permanente",
-            "icon":"question",
-            "showCancelButton":true,
-            "cancelButtonText":"No, Cancelar",
-            "confirmButtonText":"Si, Eliminar",
-            "reverseButtons":true,
-            "confirmButtonColor":"#dc3545"
-        })
-        .then(function(result){
-            if(result.isConfirmed){
-                window.location.href = "/delete-contact/"+id+"/"
+<script src="{% static 'core/js/jquery-3.6.0.js'%}"></script>
+
+<script>
+    $(document).ready(function () {
+        $('.update-status-btn').click(function () {
+            var contactId = $(this).data('contact-id');
+            var newStatus = $(this).data('status');
+
+            $.ajax({
+                url: '/api/contact/' + contactId + '/',
+                method: 'PATCH',
+                data: { 'status': newStatus },
+                success: function (response) {
+                    // Actualizar el estado en la tabla
+                    $('[data-contact-id="' + contactId + '"]').closest('tr').find('td:eq(5)').text(newStatus);
+                },
+                error: function (xhr, status, error) {
+                    console.log(error);
+                }
+            });
+        });
+
+        $('#status').change(function() {
+            var selectedStatus = $(this).val();
+            if (selectedStatus) {
+                window.location.href = '/list-contact/?status=' + selectedStatus;
+            } else {
+                window.location.href = '/list-contact/';
             }
-        })
-    }
-</script> -->
+        });
+    });
+</script>
 
 {% endblock %}
 
-{% load static %}
+
 
 {% block content %}
 {% load humanize %}
@@ -40,6 +55,47 @@
             <div class="table-responsive">
                 <table id="productTable" class="table table-striped table-hover table-responsive-sm">
                     <thead>
+                        <!-- FILTRO PARA EL ESTADO Y TIPO DE CONTACTO -->
+                        <form method="GET" action="{% url 'list_contact' %}">
+                            <div class="row">
+                                <div class="col-md-3 filter-section">
+                                    <div class="form-group">
+                                        <label for="query_type">Filtrar por tipo de contacto:</label>
+                                        <select name="query_type" id="query_type">
+                                            <option value="">Todos</option>
+                                            {% for query_type_obj in query_types %}
+                                            <option value="{{ query_type_obj.name }}" {% if selected_query_type == query_type_obj.name %}selected{% endif %}>{{ query_type_obj.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            
+                                <div class="col-md-3 filter-section">
+                                    <div class="form-group">
+                                        <label for="status">Filtrar por estado:</label>
+                                        <br>
+                                        <select name="status" id="status">
+                                            <option value="">Todos</option>
+                                            <option value="Nuevo" {% if selected_status == 'Nuevo' %}selected{% endif %}>Nuevo</option>
+                                            <option value="En progreso" {% if selected_status == 'En progreso' %}selected{% endif %}>En progreso</option>
+                                            <option value="Finalizado" {% if selected_status == 'Finalizado' %}selected{% endif %}>Finalizado</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3 filter-section">
+                                    <div class="form-group">
+                                        <button type="submit" name="filter" value="1" class="btn btn-primary">Filtrar</button>
+                                        {% if selected_query_type or selected_status %}
+                                        <a href="{% url 'list_contact' %}">
+                                            <button type="button" class="btn btn-secondary">Limpiar filtros</button>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
                         <tr>
                             <th>Nombre</th>
                             <th>Email</th>
@@ -82,48 +138,14 @@
 
             <br>
             <div class="row list-buttons">
-
-                <div class="col">
+                <div class="col-12 col-md-4">
                     <a href="{% url 'home' %}">
                         <button class="btn btn-default bg-primary-3" type="button">Volver al Inicio</button>
                     </a>
                 </div>
-
-                <div class="col">
-
-                </div>
-
-                <div class="col">
-
-                </div>
-
             </div>
         </div>
     </div>
 </div>
-
-<script src="{% static 'core/js/jquery-3.6.0.js'%}"></script>
-<script>
-    $(document).ready(function () {
-        $('.update-status-btn').click(function () {
-            var contactId = $(this).data('contact-id');
-            var newStatus = $(this).data('status');
-
-            $.ajax({
-                url: '/api/contact/' + contactId + '/',
-                method: 'PATCH',
-                data: { 'status': newStatus },
-                success: function (response) {
-                    // Actualizar el estado en la tabla
-                    $('[data-contact-id="' + contactId + '"]').closest('tr').find('td:eq(5)').text(newStatus);
-                },
-                error: function (xhr, status, error) {
-                    console.log(error);
-                }
-            });
-        });
-    });
-</script>
-
 
 {% endblock %}

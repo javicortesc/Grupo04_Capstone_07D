@@ -49,19 +49,22 @@
             </ul>
 
 
-            <div class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown"
-                aria-expanded="false">ADMINISTRACIÓN</a>
-              <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                <li><a class="dropdown-item" href="{% url 'list_product' %}">Productos</a></li>
-                <li><a class="dropdown-item" href="{% url 'list_category' %}">Categorías</a></li>
-                <li><a class="dropdown-item" href="{% url 'list_contact' %}">Contactos</a></li>
-                <li><a class="dropdown-item" href="{% url 'list_query_type' %}">Tipo Consulta</a></li>
-                <li><a class="dropdown-item" href="{% url 'order_list' %}">Ordenes</a></li>
-                <li><a class="dropdown-item" href="{% url 'list_rental_order' %}">Orden de renta</a></li>
-              </ul>
-            </div>
+            {% load auth_extras %}
 
+            {% if request.user|has_group:"admin" %}
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">ADMINISTRACIÓN</a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item" href="{% url 'list_product' %}">Productos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'list_category' %}">Categorías</a></li>
+                        <li><a class="dropdown-item" href="{% url 'list_contact' %}">Contactos</a></li>
+                        <li><a class="dropdown-item" href="{% url 'list_query_type' %}">Tipo Consulta</a></li>
+                        <li><a class="dropdown-item" href="{% url 'order_list' %}">Ordenes</a></li>
+                        <li><a class="dropdown-item" href="{% url 'list_rental_order' %}">Orden de renta</a></li>
+                    </ul>
+                </div>
+            {% endif %}
 
             {% if user.is_authenticated %}
             <input type="hidden" id="is-authenticated" value="{{ user.is_authenticated }}">
@@ -132,8 +135,12 @@
         </table>
         <hr>
         <div class="row text-center">
-          <div class="col-6"><a href="{% url 'Clean' %}" class="btn btn-default bg-primary-3">Limpiar</a></div>
-          <div class="col-6"><a href="{% url 'pago' %}" class="btn btn-default bg-primary-3 add-to-cart-btn">Pagar</a></div>
+          <div class="col-6"><a href="{% url 'Clean' %}" class="btn btn-danger">Limpiar</a></div>
+          {% if request.session.cart.items %}
+          <div class="col-6"><a href="{% url 'pago' %}" class="btn btn-warning">Pagar</a></div>
+          {% else %}
+          <div class="col-6"><button class="btn btn-warning" disabled>Pagar</button></div>
+          {% endif %}
         </div>
       </div>
     </div>

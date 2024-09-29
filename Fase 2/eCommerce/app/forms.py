@@ -145,6 +145,7 @@ class LoginForm(ModelForm):
     class Meta:
         model=Usuarios
         fields= ['usrN','pswrdN']
+        
 class RentalOrderForm(forms.ModelForm):
     name = forms.CharField(min_length=3, max_length=50)
 
@@ -156,7 +157,10 @@ class RentalOrderForm(forms.ModelForm):
             'rut': 'Rut',
             'name': 'Nombre',
             'address': 'Direccion',
+            'email': 'Correo',
             'phone': 'Celular',
             'deliver_date': 'Fecha de entrega'
         }
 
+class RecuperarForm(forms.Form):
+    email = forms.EmailField(label='Correo electrónico')
