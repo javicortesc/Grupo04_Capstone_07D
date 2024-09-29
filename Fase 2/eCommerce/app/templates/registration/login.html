@@ -1,0 +1,63 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block css %}
+<style>
+    .card {
+        padding: 20px;
+        margin-top: 50px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .card-body {
+        text-align: center;
+    }
+    
+    .form {
+        margin-top: 20px;
+    }
+    
+    .form-group {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .btn-primary {
+        margin-top: 20px;
+    }
+    
+    .text-center {
+        margin-top: 10px;
+    }
+</style>
+<title>Conejo Furioso - Iniciar Sesión</title>
+{% endblock %}
+
+{% block content %}
+<br><br><br><br><br>
+<div class="card">
+    <div class="card-body">
+        <h2>Ingresa tus credenciales</h2>
+        <hr>
+        <form action="" method="post" class="form">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.usrN.label_tag }}
+                {{ form.usrN }}
+            </div>
+            <div class="form-group">
+                {{ form.pswrdN.label_tag }}
+                {{ form.pswrdN }}
+            </div>
+            <input type="submit" name="loginBTN" value="Login" class="btn btn-default bg-primary-3 mt-3" />
+        </form>
+        
+        <div class="text-center">
+            <a href="{% url 'Recuperar' %}" class="text-center">¿Olvidaste contraseña?</a><br>
+            <a href="{% url 'Registrar' %}" class="text-center">Crear nuevo usuario</a>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="{%static 'app/js/scripts.js'%}"></script> 
+{% endblock %}

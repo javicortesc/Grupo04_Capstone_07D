@@ -1,0 +1,56 @@
+<div class="container">
+<div class="alert alert-secondary my-5" role="alert">
+    <table class="table table-bordered table-hover table-responsive-sm">
+        <thead>
+            <tr>
+                <h2 style="text-align: center; justify-content: center;" class="my-2">Carrito</h1>
+                    <br>
+            </tr>
+            <tr>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if request.session.cart.items %}
+            {% for key, value in request.session.cart.items %}
+            <tr>
+                <td><strong>{{value.product_name}}</strong></td>
+                <td>{{value.product_price}}</td>
+                <td>{{value.amount}}
+                    <a href="{% url 'Add' value.product_id %}" class="badge btn btn-dark badge-dark">+</a>
+                    <a href="{% url 'Sub' value.product_id %}" class="badge btn btn-dark badge-dark">-</a>
+                </td>
+                <td>{{value.accumulated}}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="4">
+                    <div class="alert alert-danger text-center">Sin Productos</div>
+                </td>
+            </tr>
+            {% endif %}
+                <tr>
+                    <th colspan="3" class="text-right">Total Compra:</th>
+                    <th>$ {{cart_total}}</th>
+                </tr>
+        </tbody>
+    </table>
+    <hr>
+    <div class="row text-center">
+        <div class="col-6">
+            <a href="{% url 'Clean' %}" class="btn btn-danger">Limpiar</a>
+        </div>
+        <div class="col-6">
+            {% if request.session.cart.items %}
+            <a href="{% url 'pago' %}" class="btn btn-warning">Pagar</a>
+            {% else %}
+            <button class="btn btn-warning" disabled>Pagar</button>
+            {% endif %}
+            <a href="{% url 'catalogue' %}" class="btn btn-primary">Seguir comprando</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,284 @@
+/* COLORES */
+
+:root {
+  /* color navbar y footer */
+  --color-primary: #ce8619;
+
+  /* fondo body*/
+  --color-primary-2: rgb(246, 241, 241);
+
+  /* color para buttons */
+  --color-primary-3: #19a7ce;
+
+  /* color hover y navbar toggler */
+  --color-secondary: #ffffff;
+
+  /* fondo cards */
+  --color-tres: #b7dae7ad;
+
+  --color-footer: rgb(39, 39, 39);
+}
+
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-primary-3 {
+  background-color: var(--color-primary-3) !important;
+}
+
+body {
+  background-color: var(--color-primary-2) !important;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* CARACTERÍSTICAS GENERALES DEL DOCUMENTO */
+
+* {
+    font-family: "Futura", sans-serif;
+}
+
+h1 {
+    font-weight: bold;
+}
+
+a {
+  text-decoration: none;
+}
+
+.featured a {
+    position: absolute;
+    bottom: 0;
+    margin-bottom: calc(8px*2);
+    color: #000000;
+}
+
+.featured a:hover {
+    position: absolute;
+    bottom: 0;
+    margin-bottom: calc(8px*2);
+    color: var(--color-secondary);
+}
+
+h5.noStock {
+    position: absolute;
+    bottom: 0;
+    margin-bottom: calc(8px*3);
+    color: var(--color-primary);
+}
+
+/* NAVBAR */
+
+.nav-item a {
+  color: #000000 !important;
+  margin-right: calc(8px * 2);
+  font-weight: bold;
+}
+
+.services a {
+  margin-right: 32px;
+}
+
+.nav-link:hover {
+  color: var(--color-secondary) !important;
+}
+
+.navbar-toggler {
+  background-color: var(--color-secondary);
+}
+
+
+
+/* CARRUSEL */
+
+.carrousel {
+  padding-top: 96px;
+}
+
+/* FOOTER */
+
+footer {
+    width: 100%;
+    height: 25%;
+    bottom: 0;
+    background-color: var(--color-footer);
+    padding: 10px;
+    position: relative;
+}
+
+.ft-item a {
+  color: #ffffff;
+  margin-right: calc(8px * 2);
+  height: auto;
+}
+
+.ft-link:hover {
+  color: #ce8619;
+}
+
+.about-us p {
+    text-align: justify;
+}
+
+.register a {
+
+    text-decoration: none;
+}
+
+.content {
+    flex: 1;
+}
+
+/* CARDS */
+
+.card {
+    margin-top: calc(8px *1.5);
+    margin-bottom: calc(8px *1.5);
+    /* margin: calc(8px *1.5) 0; */
+    /* border: none;
+    border-radius: 1rem; */
+    border-color: #000000;
+    border-width: 2px;
+    transition: all 100ms ease-in-out;
+    /* color: var(--color-primary-2); */
+    background-color: var(--color-tres) !important;
+
+}
+
+.card:hover {
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.26);
+
+}
+
+.card-img,
+.card-img-top {
+    /* border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem; */
+    height: 300px;
+}
+
+.card-form {
+    width: 600px;
+}
+
+.categorycard {
+  background-color: var(--color-tres) !important;
+}
+
+.card-text.description {
+    height: 70px;
+    overflow: hidden;
+}
+
+.card-text.price {
+  height: 25px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.card-body-featured {
+  height: 250px;
+}
+
+.custom-card-title {
+  height: 50px; /* Establece una altura fija para el título */
+  overflow: hidden; /* Oculta el contenido que se desborda */
+}
+
+.custom-card-description {
+  height: 70px; /* Establece una altura fija para la descripción */
+  overflow: hidden; /* Oculta el contenido que se desborda */
+}
+
+/* BOTONES */
+
+.btn-default {
+    background-color: var(--color-primary-3) !important;
+    border-width: 2px;
+    border-color: #000000;
+
+}
+
+.btn-default:hover {
+
+    background-color: black;
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.26);
+    color: var(--color-secondary) !important;
+}
+
+.list-buttons button.bg-primary {
+    color: #ffffff;
+}
+
+.list-buttons button.bg-primary:hover {
+    color: var(--color-secondary);
+}
+
+.quantity-input {
+    width: 100px;
+    margin-left: 10px;
+}
+
+.quantity-input input {
+    text-align: center;
+    width: 50px;
+}
+
+.add-to-cart-btn{
+
+  background-color: #ce8619 !important;
+}
+
+#cart-toggle{
+
+  background-color: var(--color-primary-3) !important;
+  border-width: 2px;
+  border-color: #000000;
+
+}
+
+.delete-btn{
+
+  background-color: #ce1919fb !important;
+}
+
+
+/* FORMS */
+.form button {
+    color: #ffffff;
+}
+
+.form button:hover {
+    color: var(--color-secondary);
+}
+
+.cart-container {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 430px; /* Ancho del carrito */
+  height: 100%; /* Altura del carrito (puede ajustarse según sea necesario) */
+  background-color: white; /* Color de fondo del carrito */
+  z-index: 9999; /* Asegura que el carrito se muestre por encima de otros elementos */
+  padding: 10px; /* Agrega un espacio interno al carrito */
+}
+
+.cart-close-button {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background-color: transparent;
+  font-size: 20px;
+  cursor: pointer;
+  /* Otros estilos adicionales para el botón "X" */
+}
+
+.card-terms{
+  height: 534px;
+}
