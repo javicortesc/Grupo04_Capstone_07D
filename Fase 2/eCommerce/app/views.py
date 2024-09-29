@@ -1,54 +1,63 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import ContactForm, ProductForm, CustomUserCreationForm, CategoryForm, QueryTypeForm, RentalOrderForm
+from .forms import ContactForm, ProductForm, CustomUserCreationForm, CategoryForm, QueryTypeForm, RentalOrderForm, RecuperarForm
 from django.contrib import messages
+from datetime import timedelta, datetime
 from django.contrib.auth import authenticate, login
-from .models import Product, Category, Contact, QueryType, RentalOrder
+from .models import Product, Category, Contact, QueryType, RentalOrder, RentalOrderItem
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import Http404, HttpResponse, JsonResponse
 from rest_framework import viewsets, serializers
-from .serializers import ProductSerializer, CategorySerializer, ContactSerializer, QueryTypeSerializer, RentalOrderSerializer
+from .serializers import ProductSerializer, CategorySerializer, ContactSerializer, QueryTypeSerializer, RentalOrderSerializer, RentalOrderItemSerializer, LoginSerializer
 import requests
+from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
 from app.cart import Cart
 from rest_framework.response import Response
 from django.conf import settings
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.views.decorators.csrf import csrf_exempt
-
-
 from .models import Order,OrderItem
-
+from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from django.middleware.csrf import get_token
-import logging
-
-
-# Create your views here.
-from telnetlib import LOGOUT
-from tokenize import group
-from turtle import delay
-from django import forms
-from unicodedata import name
-from .models import  Usuarios
+import logging, json
+from rest_framework_simplejwt.tokens import RefreshToken
+from .serializers import TokenSerializer
 from .forms import  UsuariosForm, LoginForm
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from rest_framework.decorators import permission_classes
 from django.contrib.auth.models import User
-from django.http import HttpRequest, HttpResponseRedirect
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from conejofurioso.viewsLogin import login as api_login
-import json
 import requests
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response as apiResponse
 from rest_framework.views import APIView
+from .models import Tokens
+from rest_framework.authtoken.views import ObtainAuthToken
+from django.http import HttpRequest
+from rest_framework.views import APIView
+from django.utils import timezone
+from django.utils.timezone import make_aware
+from django.http import HttpRequest
+from rest_framework.views import APIView
+from dateutil.parser import parse
+from collections import Counter
+from django.db.models import F
 
 tok = None
 
 def is_staff(user):
     return (user.is_authenticated and user.is_superuser)
+
 #VIEWSETS PARA APIS
 class CategoryViewset(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -105,6 +114,23 @@ class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
 
+    def get_queryset(self):
+        queryset = Contact.objects.all()
+
+        # Obtener el parámetro de consulta 'status' de la URL
+        status = self.request.query_params.get('status', None)
+        if status is not None and status != '':
+            # Filtrar los contactos por estado
+            queryset = queryset.filter(status=status)
+
+        # Obtener el parámetro de consulta 'query_type_id' de la URL
+        query_type_id = self.request.query_params.get('query_type_id', None)
+        if query_type_id is not None and query_type_id != '':
+            # Filtrar los contactos por ID del tipo de consulta
+            queryset = queryset.filter(query_type_id=query_type_id)
+
+        return queryset
+
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         status = request.data.get('status')
@@ -118,10 +144,18 @@ class QueryTypeViewset(viewsets.ModelViewSet):
     serializer_class = QueryTypeSerializer
 
 class RentalOrderViewSet(viewsets.ModelViewSet):
+    # def list(self, request):
+    #     rental_orders = RentalOrder.objects.all()
+    #     serializer = RentalOrderSerializer(rental_orders, many=True)
+    #     return Response(serializer.data)
     queryset = RentalOrder.objects.all()
     serializer_class = RentalOrderSerializer
-    
 
+class RentalOrderItemViewSet(viewsets.ModelViewSet):
+    queryset = RentalOrderItem.objects.all()
+    serializer_class = RentalOrderItemSerializer
+ 
+    
 #VISTAS INICIALES
 def home(request):
     # Definimos los parámetros para filtrar productos
@@ -143,6 +177,9 @@ def home(request):
     
     return render(request, 'app/home.html', data)
 
+@csrf_exempt
+@api_view(['GET','POST'])
+# @permission_classes((IsAuthenticated,))
 def catalogue(request):
     # Obtenemos los filtros desde el html
     name_filter = request.GET.get('name', '')
@@ -192,33 +229,80 @@ def rental_service(request):
                 'rut': form.cleaned_data['rut'],
                 'name': form.cleaned_data['name'],
                 'address': form.cleaned_data['address'],
+                'email': form.cleaned_data['email'],
                 'phone': form.cleaned_data['phone'],
                 'deliver_date': deliver_date_iso,  # Utilizar la cadena de texto en lugar del objeto datetime
             }
+            # validacion para verificar que el mismo rut no haya generado una solicitud de arriendo en los ultimos 15 minutos
+            existing_order = RentalOrder.objects.filter(
+                Q(rut=rental_order_data['rut']) &
+                Q(created_at__gte=timezone.now() - timedelta(minutes=15))
+            ).exists()
 
-            # Obtener la lista de productos seleccionados
-            products_selected = request.POST.getlist('products')
-            products_selected = [int(product_id) for product_id in products_selected if product_id.isdigit()]
+            if existing_order:
+                return JsonResponse({'error': 'Ya existe una orden de renta con los mismos datos'})
+            else:
+                try:
+                    # Crear la orden a través de la API
+                    rental_order_response = requests.post(settings.API_BASE_URL + 'rental-orders/', json=rental_order_data)
+                    if rental_order_response.status_code == 201:
+                        rental_order = rental_order_response.json()
+                        rental_order_id = rental_order['id']  # Obtener el ID de la orden de renta creada
 
-            rental_order_data['products'] = products_selected  # Agregar la lista de productos seleccionados
+                        # Obtener la lista de productos seleccionados y sus cantidades
+                        products_selected = request.POST.getlist('products')
+                        quantities = [int(request.POST.get(f'quantity_{product_id}', 1)) for product_id in products_selected]
 
-            try:
-                # Crear la orden a través de la API
-                rental_order_response = requests.post(settings.API_BASE_URL + 'rental-orders/', json=rental_order_data)
-                if rental_order_response.status_code == 201:
-                    rental_order = rental_order_response.json()
+                        # Obtener la lista completa de productos utilizando los ID de los productos seleccionados
+                        products = Product.objects.filter(id__in=products_selected)
 
-                    # Agregar los productos a la orden a través de la API
-                    product_ids = [str(product_id) for product_id in products_selected]  # Convertir los IDs de productos a cadena de texto
-                    add_product_url = settings.API_BASE_URL + f'rental-orders/{rental_order["id"]}/add-product/?products={",".join(product_ids)}'
-                    requests.post(add_product_url)
+                        rental_order_items = []
+                        for product_id, quantity in zip(products_selected, quantities):
+                            product = Product.objects.get(id=product_id)  # Obtener el producto de la base de datos
+                            rental_order_item = RentalOrderItem(
+                                rental_order=RentalOrder.objects.get(id=rental_order_id),
+                                product_name=product.name,
+                                product_price=product.price,
+                                amount=quantity
+                            )
+                            rental_order_items.append(rental_order_item)
 
-                    return JsonResponse({'message': 'La solicitud de arriendo ha sido enviado correctamente'})
-                else:
-                    return JsonResponse({'error': 'Error al enviar la solicitud'})
+                        RentalOrderItem.objects.bulk_create(rental_order_items, batch_size=100)  # Especificar un tamaño de lote adecuado
 
-            except Exception as e:
-                return JsonResponse({'error': 'Error en el servidor'})
+                        # Obtener los nombres de los productos y calcular el precio total
+                        product_names = [product.name for product in products]
+                        total_price = sum(product.price * quantity for product, quantity in zip(products, quantities))
+
+                        # Enviar correo electrónico con la información del RentalOrder
+                        email_subject = 'Confirmación de orden de renta'
+                        email_body = f'Se ha creado una nueva orden de renta con los siguientes detalles:\n\n' \
+                                     f'RUT: {rental_order_data["rut"]}\n' \
+                                     f'Nombre: {rental_order_data["name"]}\n' \
+                                     f'Dirección: {rental_order_data["address"]}\n' \
+                                     f'Correo electrónico: {rental_order_data["email"]}\n' \
+                                     f'Teléfono: {rental_order_data["phone"]}\n' \
+                                     f'Fecha de entrega: {rental_order_data["deliver_date"]}\n\n' \
+                                     f'Productos:\n'
+                        for name, quantity, product in zip(product_names, quantities, products):
+                            email_body += f'- {name}: {quantity}\nprecio: {product.price}\n'
+                        email_body += f'Total de la orden: {total_price}\n\n' \
+                                      f'Gracias por su solicitud.'
+
+                        sender_email = settings.EMAIL_HOST_USER
+                        receiver_email = rental_order_data['email']
+
+                        send_mail(email_subject, email_body, sender_email, [receiver_email])
+
+                        return JsonResponse({'message': 'La solicitud de arriendo ha sido enviada correctamente, recibiras un correo con la información'})
+                    else:
+                        return JsonResponse({'error': 'Error al enviar la solicitud'})
+
+                except Exception as e:
+                    print(f"Error en el servidor: {str(e)}")
+                    return JsonResponse({'error': 'Error en el servidor'})
+
+        else:
+            return JsonResponse({'error': 'Error en los datos del formulario'})
 
     else:
         form = RentalOrderForm()
@@ -238,7 +322,6 @@ def rental_service(request):
     }
 
     return render(request, 'app/rental_service.html', data)
-
 
 #CONTATO
 def contact(request):
@@ -260,20 +343,46 @@ def update_contact_status(request, contact_id):
 
 @permission_required('app.view_contact')
 def list_contact(request):
-    response = requests.get(settings.API_BASE_URL + 'contact/')
-    contacts = response.json()
-    page = request.GET.get('page', 1)
+    status = request.GET.get('status', '')
+    query_type = request.GET.get('query_type', '')
+
+    response_query_types = requests.get(settings.API_BASE_URL + 'query-type/')
+    query_types = response_query_types.json()
+
+    params = {}
+    if status and status != 'Todos':
+        params['status'] = status
+    if query_type and query_type != 'Todos':
+        params['query_type'] = query_type
+
+    response = requests.get(settings.API_BASE_URL + 'contact/', params=params)
+    if response.status_code == 200:
+        contacts = response.json()
+    else:
+        contacts = []
+
+    # Filtrar los contactos localmente en función del tipo de contacto seleccionado
+    if query_type and query_type != 'Todos':
+        contacts = [contact for contact in contacts if contact['query_type_name'] == query_type]
+
+    paginator = Paginator(contacts, 5)
+    page = request.GET.get('page')
 
     try:
-        paginator = Paginator(contacts, 5)
         contacts = paginator.page(page)
-    except:
-        raise Http404
+    except PageNotAnInteger:
+        contacts = paginator.page(1)
+    except EmptyPage:
+        contacts = paginator.page(paginator.num_pages)
 
     data = {
         'entity': contacts,
-        'paginator': paginator
+        'paginator': paginator,
+        'query_types': query_types,
+        'selected_status': status,
+        'selected_query_type': query_type,
     }
+
     return render(request, 'app/contact/list.html', data)
 
 #VISTAS DE QUERYTYPE
@@ -701,19 +810,29 @@ def product_detail(request, id):
 #VISTA DE REGISTRO NO API
 def register(request):
     data = {
-        'form': CustomUserCreationForm()
+        'form': UsuariosForm()
     }
     if request.method == 'POST':
-        formulario = CustomUserCreationForm(data=request.POST)
-        if formulario.is_valid():
-            formulario.save()
-            user = authenticate(
-                username=formulario.cleaned_data["username"], password=formulario.cleaned_data["password1"])
-            login(request, user)
+        form = UsuariosForm(request.POST)
+        if form.is_valid():
+            form.save()
+            #obtiene los datos del usuario desde formulario
+            usernameN = form.cleaned_data.get('usrN')
+            passwordN = form.cleaned_data.get('pswrdN')
+            passwordN2= form.cleaned_data.get('pswrdN2')
+            try:
+                #se verifica existencia del usuario
+                user = User.objects.get(username = usernameN)
+            except User.DoesNotExist:
+                #si no existe se genera un nuevo usuario validando si es que las pswrd son identicas
+                if(passwordN == passwordN2):
+                    user = User.objects.create_user(username=usernameN,email=usernameN,password=passwordN)
+                    user = authenticate(username=usernameN, password=passwordN) #autentifican las credenciales del usuario
+                    #se logea al usuario nuevo
+                    login(request,user)
             messages.success(request, "Te has registrado correctamente")
-            # redirigir al home
             return redirect(to="home")
-        data["form"] = formulario
+        data["form"] = form
     return render(request, 'registration/register.html', data)
 
 #METODOS DEL CARRITO NO API
@@ -760,7 +879,8 @@ def buy_confirm(request):
     cart = Cart(request)
     cart.buy()
     cart.clean()
-    return redirect('cart')
+    messages.success(request, "Compra de prueba Completada")
+    return redirect('home')
 
 #VISTAS CATEGORY
 def get_object_category(id):
@@ -931,60 +1051,101 @@ def pago(request):
 
 def user_login(request):
     global tok
-    datos={
-        'form':LoginForm()
+    datos = {
+        'form': LoginForm()
     }
-    if(request.method == 'POST'):
+    if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
             usernameU = request.POST['usrN']
             passwordU = request.POST['pswrdN']
-            user = authenticate(username=usernameU,password=passwordU)
+            user = authenticate(username=usernameU, password=passwordU)
             if user is not None:
-                login(request,user)
-                body= {"username": usernameU ,"password" : passwordU} #se genera json con info de usuario creado
-                r = requests.post('http://127.0.0.1:8000/API/login',data=json.dumps(body)) # se realiza la creacion de token
-                tok=r.text
-                return render(request, "app/home.html")
-    return render(request,"registration/login.html",datos)
+                login(request, user)
+                refresh = RefreshToken.for_user(user)
+                token = str(refresh.access_token)
+
+                # Guardar el token en el modelo Tokens
+                token_data = {
+                    'token': token,
+                    'user': usernameU
+                }
+                token_serializer = TokenSerializer(data=token_data)
+                if token_serializer.is_valid():
+                    token_serializer.save()
+
+                tok = token
+                messages.success(request, "has iniciado sesión")
+                return redirect(to="home")           
+    return render(request, "registration/login.html", datos)
 
 def Recuperar(request):
-    return render(request,"registration/Recuperar.html")
-
+    form = RecuperarForm(request.POST or None)
+    if form.is_valid():
+        email = form.cleaned_data['email']
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
+        if user:
+            # Enviar el correo electrónico con la contraseña
+            subject = 'Recuperación de contraseña'
+            message = f'Tu contraseña es: {user.password}'
+            from_email = settings.EMAIL_HOST_USER
+            recipient_list = [email]
+            send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+            messages.success(request, "Se ha enviado un correo con tu contraseña")
+    return render(request, 'registration/Recuperar.html', {'form': form})
 #se crea usuario nuevo y token
-def Registrar(request): 
-    global tok
-    datos={
-        'form':UsuariosForm()
+
+class LoginView(APIView):
+    def post(self, request, format=None):
+        django_request = HttpRequest()
+        django_request.method = request.method
+        django_request.POST = request.data
+        django_request._request = request._request
+        
+        serializer = LoginSerializer(data=django_request.POST)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key})
+
+def Registrar(request):
+    datos = {
+        'form': UsuariosForm()
     }
-    if(request.method == 'POST'):
-        form=UsuariosForm(request.POST)
+    if request.method == 'POST':
+        form = UsuariosForm(request.POST)
         if form.is_valid():
-            #obtiene los datos del usuario desde formulario
+            # Obtiene los datos del usuario desde el formulario
             usernameN = form.cleaned_data.get('usrN')
             passwordN = form.cleaned_data.get('pswrdN')
-            passwordN2= form.cleaned_data.get('pswrdN2')
+            passwordN2 = form.cleaned_data.get('pswrdN2')
             try:
-                #se verifica existencia del usuario
-                user = User.objects.get(username = usernameN)
+                # Verifica la existencia del usuario
+                user = User.objects.get(username=usernameN)
             except User.DoesNotExist:
-                #si no existe se genera un nuevo usuario validando si es que las pswrd son identicas
-                if(passwordN == passwordN2):
-                    user = User.objects.create_user(username=usernameN,email=usernameN,password=passwordN)
-                    user = authenticate(username=usernameN, password=passwordN) #autentifican las credenciales del usuario
-                    #se logea al usuario nuevo
-                    login(request,user)
-                    #comienzo de creacion de token
-                    body= {"username": usernameN ,"password" : passwordN} #se genera json con info de usuario creado
-                    r = requests.post('http://127.0.0.1:8000//API/login',data=json.dumps(body)) # se realiza la creacion de token
-                    tok=r.text #se imprime token en forma  de debug
-                    #fin creacion token
-                    return render(request, "app/home.html")
-    return render(request,"registration/Registrar.html",datos)
+                # Si no existe, se genera un nuevo usuario validando si las contraseñas son idénticas
+                if passwordN == passwordN2:
+                    user = User.objects.create_user(username=usernameN, email=usernameN, password=passwordN)
+                    user = authenticate(username=usernameN, password=passwordN)  # Autentifica las credenciales del usuario
+                    if user is not None:
+                        login(request, user)
+                        refresh = RefreshToken.for_user(user)
+                        token = str(refresh.access_token)
 
-def desconectar(request):
-    logout(request)
-    return redirect('login') 
+                        # Guardar el token en el modelo Tokens
+                        token_data = {
+                            'token': token,
+                            'user': usernameN
+                        }
+                        token_instance = Tokens.objects.create(**token_data)
+
+                        messages.success(request, "Te has registrado correctamente")
+                        return redirect('home')
+
+    return render(request, "registration/Registrar.html", datos)
 
 @csrf_exempt
 def update_last_order_paid_status(user):
@@ -1022,7 +1183,6 @@ def payment_success(request):
             order_item.save()
 
         # Lógica adicional, como enviar un correo electrónico de confirmación, generar una factura, etc.
-
         return render(request, 'app/payment_success.html')
 
     return render(request, 'app/pago.html')
@@ -1037,7 +1197,8 @@ def order_list(request):
     if start_date and end_date:
         orders = orders.filter(fecha__range=[start_date, end_date])
 
-    # Filtro por nombre de OrderItem
+
+        # Filtro por nombre de OrderItem
     order_item_name = request.GET.get('order_item_name')
     if order_item_name:
         orders = orders.filter(orderitem__product_name__icontains=order_item_name)
@@ -1048,7 +1209,8 @@ def order_list(request):
     total_products_sold = OrderItem.objects.filter(order__in=orders).aggregate(total_sold=Sum('amount'))['total_sold']
 
     # Obtener los 4 productos más vendidos considerando los filtros
-    top_products = OrderItem.objects.filter(order__in=orders).values('product_name').annotate(total_amount=Count('product_name')).order_by('-total_amount')[:4]
+    # top_products = OrderItem.objects.filter(order__in=orders).values('product_name').annotate(total_amount=Count('product_name')).order_by('-total_amount')[:4]
+    top_products = OrderItem.objects.filter(order__in=orders).values('product_name').annotate(total_amount=Sum('amount')).order_by('-total_amount')[:4]
 
     paginator = Paginator(orders, 5)
     try:
@@ -1067,19 +1229,99 @@ def order_list(request):
     }
     return render(request, 'app/order_list.html', data)
 
+@api_view(['POST'])
+def obtain_token(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+
+    if username and password:
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+            })
+    return Response({'error': 'Credenciales inválidas.'}, status=400)
+
 def list_rental_order(request):
+    product_name = request.GET.get('product_name')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
     response = requests.get(settings.API_BASE_URL + 'rental-orders/')
+    if response.status_code != 200:
+        error_message = 'Error al obtener los datos de la API'
+        return HttpResponse(error_message, status=500)
+
     rental_orders = response.json()
+
+    # Aplicar los filtros después de recibir los datos de la API
+    if product_name:
+        rental_orders = [ro for ro in rental_orders if any(product_name.lower() in item['product_name'].lower() for item in ro['items'])]
+
+    if start_date and end_date:
+        start_date = parse(start_date).date()
+        end_date = parse(end_date).date()
+        rental_orders = [ro for ro in rental_orders if start_date <= parse(ro['deliver_date']).date() <= end_date]
+
+    # Calcular el precio acumulado y la cantidad de productos vendidos
+    total_accumulated = sum(
+        float(item['product_price']) * item['amount']
+        for ro in rental_orders
+        for item in ro['items']
+    )
+    total_products_sold = sum(
+        item['amount']
+        for ro in rental_orders
+        for item in ro['items']
+    )
+
+    # Calcular el campo total_price para cada rental_order
+    for rental_order in rental_orders:
+        total_price = 0
+        for item in rental_order['items']:
+            product_price = float(item['product_price'])
+            amount = item['amount']
+            total_price += product_price * amount
+        rental_order['total_price'] = total_price
+
+    # Obtener una lista de todos los productos vendidos
+    all_products = [
+        item['product_name']
+        for ro in rental_orders
+        for item in ro['items']
+    ]
+
+    # Contar la cantidad de veces que se vende cada producto
+    product_counts = Counter(all_products)
+
+    # Obtener los productos más vendidos
+    top_products = []
+    for product, _ in product_counts.most_common(4):
+        total_amount = sum(
+            item['amount']
+            for ro in rental_orders
+            for item in ro['items']
+            if item['product_name'] == product
+        )
+        top_products.append((product, total_amount))
+
+    # Crear un Paginator con los datos sin paginar
+    paginator = Paginator(rental_orders, 5)
     page = request.GET.get('page', 1)
 
     try:
-        paginator = Paginator(rental_orders, 5)
         rental_orders = paginator.page(page)
     except:
-        raise Http404
+        error_message = 'Error al paginar los datos'
+        return HttpResponse(error_message, status=500)
 
     data = {
         'entity': rental_orders,
-        'paginator': paginator
+        'paginator': paginator,
+        'total_accumulated': total_accumulated,
+        'total_products_sold': total_products_sold,
+        'top_products': top_products,
     }
     return render(request, "app/rental_order/list.html", data)

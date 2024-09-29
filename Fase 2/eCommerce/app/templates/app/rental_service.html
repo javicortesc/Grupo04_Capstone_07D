@@ -44,7 +44,13 @@
           productInput.setAttribute('type', 'hidden');
           productInput.setAttribute('name', 'products');
           productInput.setAttribute('value', productId);
+          const selectedQuantityInput = document.getElementById(`quantityInput${productId}`)
+          const quantityInput = document.createElement('input');
+          quantityInput.setAttribute('type', 'hidden');
+          quantityInput.setAttribute('name', `quantity_${productId}`);
+          quantityInput.setAttribute('value', selectedQuantityInput.value);
           form.appendChild(productInput);
+          form.appendChild(quantityInput);
         });
 
         // Enviar el formulario a través de AJAX
@@ -57,7 +63,7 @@
         .then(data => handleFormResponse(data))
         .catch(error => {
           console.error('Error en la solicitud:', error);
-          Swal.fire('Error', 'Error en el servidor', 'error');
+          Swal.fire('Error', 'Error en el servidor ajax', 'error');
         });
       }
     });
@@ -78,9 +84,9 @@
 
 {% block content %}
 {% load humanize %}
-<br><br><br>
 <div class="container my-5">
   <section class="pb-5">
+    <br><br>
     <h1 class="text-center py-5">ARRIENDA UN BARRIL CERVECERO!</h1>
     <div class="row justify-content-center">
       {% for p in products %}
@@ -95,15 +101,21 @@
             <div class="text-center">
               <h5 class="card-title custom-card-title">{{ p.name | capfirst }}</h5>
             </div>
-            <p class="card-text custom-card-description">Disponible:{{ p.stock}}</p>
+            <p class="card-text custom-card-description">Disponible: {{ p.stock }}</p>
             <div class="mt-auto text-center">
-              <p class="card-text price"><b> ${{ p.price | intcomma }}</b></p>
+              <p class="card-text price"><b>$ {{ p.price | intcomma }}</b></p>
               <div class="form-check">
                 <input class="form-check-input product-checkbox" type="checkbox" id="productCheckbox{{ p.id }}"
                   value="{{ p.id }}" data-product-id="{{ p.id }}">
                 <label class="form-check-label" for="productCheckbox{{ p.id }}">
                   Seleccionar
                 </label>
+              </div>
+              <br>
+              <div class="form-group">
+                <label for="quantityInput{{ p.id }}">Cantidad:</label>
+                <input type="number" class="form-control quantity-input" id="quantityInput{{ p.id }}" name="quantity_{{ p.id }}" value="1" min="1"
+                       data-product-id="{{ p.id }}">
               </div>
             </div>
           </div>
@@ -121,16 +133,12 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title text-center my-5">Términos y Condiciones</h5>
           <ol class="mt-4">
-            <li>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</li>
-            <li>Nulla condimentum mauris non velit sagittis, at rutrum justo fringilla.</li>
-            <li>Morbi sit amet lectus at neque rutrum facilisis.</li>
-            <li>Donec a velit ut risus consequat varius nec vitae nunc.</li>
-            <li>Proin quis leo rutrum, rhoncus est at, interdum purus.</li>
-            <li>Vestibulum a risus eu neque feugiat finibus.</li>
-            <li>Fusce a sem aliquam, feugiat tortor at, rhoncus mauris.</li>
-            <li>Quisque rutrum lorem nec diam venenatis viverra.</li>
-            <li>Sed eget ex consequat, cursus risus quis, vehicula sem.</li>
-            <li>Ut ac nunc id tellus tincidunt hendrerit.</li>
+            <li>El cliente deberá agendar el arriendo con 2 días de anticipación mínimo</li>
+            <li>El cliente se responsabiliza por cualquier daño causado a material de la empresa</li>
+            <li>Una vez el pago del arriendo fue efectuado, no se aceptarán devoluciones</li>
+            <li>Una vez hecho el arriendo, la empresa se encargará de coordinar la entrega</li>
+            <li>Producto no apto para menores de 18 años</li>
+            <li>El cliente se compromete a devolver el barril a la empresa al día siguiente del arriendo</li>
           </ol>
           <div class="mt-auto text-center d-flex justify-content-center">
             <div class="form-check">
@@ -165,6 +173,10 @@
                   placeholder="Ingrese su dirección">
               </div>
               <div class="mb-3">
+                <label for="emailInput" class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-control" id="emailInput" name="email" placeholder="Ingrese su correo electrónico">
+              </div>
+              <div class="mb-3">
                 <label for="celularInput" class="form-label">Celular</label>
                 <input type="text" class="form-control" id="celularInput" name="phone"
                   placeholder="Ingrese su número de celular">
@@ -173,7 +185,9 @@
                 <label for="fechaEntregaInput" class="form-label">Fecha de Entrega con Hora</label>
                 <input type="datetime-local" class="form-control" id="fechaEntregaInput" name="deliver_date">
               </div>
-              <button type="submit" class="btn btn-primary">Enviar</button>
+              <div class="text-center">
+                <button type="submit" class="btn btn-default bg-primary-3">Enviar</button>
+              </div>
             </form>
           </div>
         </div>

@@ -7,7 +7,8 @@ from .views import home, rental_service, catalogue, contact,\
     list_category, update_category, delete_category, admin_panel,\
     ContactViewSet,pago, list_contact,\
     QueryTypeViewset, update_contact_status, add_query_type, list_query_type,\
-    update_query_type, delete_query_type, RentalOrderViewSet, list_rental_order
+    update_query_type, delete_query_type, RentalOrderViewSet, list_rental_order,\
+    RentalOrderItemViewSet
 
 
 from unicodedata import name
@@ -15,8 +16,8 @@ from . import views
 #from .views import index
 
 from .views import Registrar, order_list
-
-from .views import Recuperar
+from django.contrib.auth.views import LoginView
+from .views import Recuperar,login
 from .views import user_login
 from django.views.generic import TemplateView
 from django.contrib.auth.views import LogoutView
@@ -25,9 +26,8 @@ from django.conf.urls.static import static
 
 
 
-
 from .views import payment_success
-
+from .views import obtain_token
 
 
 from rest_framework import routers
@@ -37,10 +37,13 @@ router.register('product', ProductViewset)
 router.register('category', CategoryViewset)
 router.register('contact', ContactViewSet, basename='contact')
 router.register('query-type', QueryTypeViewset, basename='query-type')
-router.register(r'rental-orders', RentalOrderViewSet)
+router.register(r'rental-orders', RentalOrderViewSet, basename='rental-orders')
+router.register(r'rental-order-items', RentalOrderItemViewSet)
 
 
 urlpatterns = [
+    
+    path('accounts/', include('django.contrib.auth.urls')),
     path('', home, name="home"),
     path('catalogue/', catalogue, name="catalogue"),
     path('rental-service/', rental_service, name="rental_service"),
@@ -61,24 +64,25 @@ urlpatterns = [
     path('update-category/<id>/', update_category, name="update_category"),
     path('delete-category/<id>/', delete_category, name="delete_category"),
     path('api/', include(router.urls)),
-    path('register/', register, name="register"),
     path("add/<int:product_id>", add_prod_cart, name="Add"),
     path("delete/<int:product_id>", del_prod_cart, name="Del"),
     path("subtract/<int:product_id>", subtract_product_cart, name="Sub"),
     path("clean/", clean_cart, name="Clean"),
     path("cart/", cart_page, name="Cart"),
-    # path("checkout/", checkout, name="Checkout"),
     path("buy-confirm/", buy_confirm, name="buy_confirm"),
     path("admin-panel/", admin_panel, name="admin_panel"),
-    # path("success-payment/", pago_exitoso, name="pago_exitoso"),
-    path('accounts/', include('django.contrib.auth.urls')),
     path('pago/', pago, name="pago"),
-    path('login/', user_login, name='login'),
-    path('accounts/', include('allauth.urls')),
     path('Recuperar/', Recuperar, name='Recuperar'),
-    path('Registrar/', Registrar, name='Registrar'),
     path('payment_success/', payment_success, name='payment_success'),
     path('payment_success/', views.update_last_order_paid_status, name='update_last_order_paid_status'),
     path('orders/', order_list, name='order_list'),
     path('list-rental-order/', list_rental_order, name="list_rental_order"),
+    path('Registrar/', Registrar, name='Registrar'),   
+    path('payment_success/', payment_success, name='payment_success'),
+    path('payment_success/', views.update_last_order_paid_status, name='update_last_order_paid_status'),
+    path('api/token/', views.obtain_token, name='obtain_token'),
+    path('login/', user_login, name='login'),
+    path('api/token/', obtain_token, name='obtain_token'),
+    path('login/', LoginView.as_view(template_name='login.html'), name='login'),
+    path('api/login', login, name='login_api'),
 ]
