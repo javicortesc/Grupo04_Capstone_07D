@@ -42,13 +42,14 @@
                         <div class="col-md-1">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button class="btn btn-primary form-control" type="submit">Filtrar</button>
+                                <button class="btn btn-default bg-primary-3 form-control" type="submit">Filtrar</button>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <a href="{% url 'order_list' %}" class="btn btn-secondary form-control">Limpiar
+                                <a href="{% url 'order_list' %}"
+                                    class="btn btn-default bg-primary-3 add-to-cart-btn form-control">Limpiar
                                     filtros</a>
                             </div>
                         </div>
@@ -64,7 +65,7 @@
                             <th>Nombre</th>
                             <th>Direccion</th>
                             <th>Celular</th>
-                            <th>Acumulado</th>
+                            <th>Total Orden</th>
                             <th>Pagado</th>
                             <th>Fecha</th>
                             <th>Order Items</th>
@@ -121,39 +122,80 @@
                     </tbody>
                 </table>
 
-                <div class="total-accumulated">
-                    <h4>Total acumulado de todas las órdenes: $ {{ total_accumulated }}</h4>
-                    <h4>Total de productos vendidos: {{ total_products_sold }}</h4>
-                </div>
+                <style>
+                    table {
+                        border-collapse: collapse;
+                        width: 100%;
+                        background-color: #ffffff;
+                        border: 1px solid #000000;
+                    }
+                
+                    th,
+                    td {
+                        text-align: left;
+                        padding: 8px;
+                        border: 1px solid #000000;
+                    }
+                
+                    th {
+                        background-color: #f2f2f2;
+                    }
+                </style>
+                
+                </head>
+                
+                <body>
+                    <div class="total-accumulated">
+                        <table>
+                            <tr>
+                                <th>Total acumulado de todas las órdenes</th>
+                                <td>$ {{ total_accumulated }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total de productos vendidos</th>
+                                <td>{{ total_products_sold }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                
+                    <div class="top-products">
+                        <h3>Productos más vendidos:</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre del producto</th>
+                                    <th>Cantidad vendida</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in top_products %}
+                                <tr>
+                                    <td>{{ product.product_name }}</td>
+                                    <td>{{ product.product_name }} - Cantidad vendida: {{ product.total_amount }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
 
-                <div class="top-products">
-                    <h3>Productos más vendidos:</h3>
-                    <ul>
-                        {% for product in top_products %}
-                        <li>{{ product.product_name }} - Cantidad vendida: {{ product.total_amount }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                        <hr>
+                        <div>
+                            {% include 'app/paginator.html' %}
+                        </div>
+                    </div>
 
-                <hr>
-                <div>
-                    {% include 'app/paginator.html' %}
-                </div>
-            </div>
-
-            <br>
-            <div class="row list-buttons">
-                <div class="col">
-                    <a href="{% url 'home' %}">
-                        <button class="btn btn-default bg-primary-3" type="button">Volver al Inicio</button>
-                    </a>
-                </div>
+                    <br>
+                    <div class="row list-buttons">
+                        <div class="col">
+                            <a href="{% url 'home' %}">
+                                <button class="btn btn-default bg-primary-3" type="button">Volver al Inicio</button>
+                            </a>
+                        </div>
+                    </div>
             </div>
         </div>
+
     </div>
 
-</div>
+    <script src="{% static 'core/js/jquery-3.6.0.js'%}"></script>
 
-<script src="{% static 'core/js/jquery-3.6.0.js'%}"></script>
-
-{% endblock %}
+    {% endblock %}

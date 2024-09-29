@@ -41,9 +41,16 @@
     </table>
     <hr>
     <div class="row text-center">
-        <div class="col-6"><a href="{% url 'Clean' %}" class="btn btn-default bg-primary-3 ">Limpiar</a></div>
-        <div class="col-6"><a href="{% url 'pago' %}" class="btn btn-default bg-primary-3 add-to-cart-btn">Pagar</a></div>
-
+        <div class="col-6">
+            <a href="{% url 'Clean' %}" class="btn btn-danger">Limpiar</a>
+        </div>
+        <div class="col-6">
+            {% if request.session.cart.items %}
+            <a href="{% url 'pago' %}" class="btn btn-warning">Pagar</a>
+            {% else %}
+            <button class="btn btn-warning" disabled>Pagar</button>
+            {% endif %}
+            <a href="{% url 'catalogue' %}" class="btn btn-primary">Seguir comprando</a>
+        </div>
     </div>
-</div>
 </div>

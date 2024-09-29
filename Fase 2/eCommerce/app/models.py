@@ -65,7 +65,7 @@ class Contact(models.Model):
         return self.name
 
 class Usuarios(models.Model):
-    usrN= models.CharField(max_length=30,verbose_name="Nombre de Usuario")
+    usrN= models.CharField(max_length=100,verbose_name="Nombre de Usuario")
     pswrdN= models.CharField(max_length=15, verbose_name="Contraseña")
     pswrdN2=models.CharField(max_length=15, verbose_name="Contraseña2")
 #fin modelos para usuarios
@@ -101,9 +101,23 @@ class RentalOrder(models.Model):
     rut = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=200)
+    email = models.EmailField(default= "default@correo.cl")
     phone = models.CharField(max_length=20)
     deliver_date = models.DateTimeField()
-    products = models.ManyToManyField(Product)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+    
+    # @property
+    # def items(self):
+    #     return self.rentalorderitem_set.all()
+    
+class RentalOrderItem(models.Model):
+    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
+    product_name = models.CharField(max_length=100)
+    product_price = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.product_name} - Amount: {self.amount}"  
