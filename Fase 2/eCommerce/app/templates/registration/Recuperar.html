@@ -1,0 +1,22 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block css %}
+<title>Conejo Furioso - Recuperar Contraseña</title>
+{% endblock %}
+
+{% block content %}
+<br><br><br>
+<div class="container my-5" style="max-width: 600px;">
+    <div class="card my-5">
+        <div class="card-body">
+            <h2 class="text-center">Recuperar Contraseña</h2>
+            <hr>
+            <form action="" method="post" class="form">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" name="recoverBTN" value="Recuperar" class="btn btn-primary" />
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
