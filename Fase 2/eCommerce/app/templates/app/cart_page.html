@@ -1,0 +1,26 @@
+{% extends 'app/base.html' %}
+
+{% load static %}
+
+{% block css %}
+<title>Conejo Furioso</title>
+{% endblock %}
+
+{% block content %}
+<br><br><br><br>
+<div id="cart-container">
+    <main class="container">
+        {% include "app/cart.html" %}
+        {% if request.session.cart.items %}
+        <div class="row text-center">
+            {% comment %}
+            <div class="col-6"><a href="{% url 'Clean' %}" class="btn btn-default bg-primary-3">Limpiar</a></div>
+
+            <div class="col-6"><a href="{% url 'Checkout' %}" class="btn btn-default bg-primary-3 add-to-cart-btn">Ir al pago</a></div>
+            {% endcomment %}
+        </div>
+        {% else %}
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block tittle_css %}
+<title>Catalogo | Conejo Furioso</title>
+{% endblock %}
+
+{% block content %}
+{% load humanize %}
+<br><br><br><br><br><br>
+<div class="container my-5">
+  <div class="row">
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body ">
+          <h5 class="card-title">Filtros</h5>
+          <form>
+            <div class="mb-3">
+              <label class="form-label">Buscar por nombre</label>
+              <input type="text" class="form-control" placeholder="Ingrese el nombre" name="name">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Filtrar por categoría</label>
+              <select class="form-select" id="category-filter" name="category">
+                <option value="">Todas las categorías</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Precio mínimo</label>
+              <input type="number" class="form-control" placeholder="Ingrese el precio mínimo" name="min_price_filter">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Precio máximo</label>
+              <input type="number" class="form-control" placeholder="Ingrese el precio máximo" name="max_price_filter">
+            </div>
+            <button type="submit" class="btn btn-default bg-primary-3" name="filter_submit">Aplicar filtros</button>
+            {% if request.GET.name or request.GET.category or request.GET.min_price_filter or request.GET.max_price_filter %}
+            <button type="submit" class="btn btn-default bg-primary-3 add-to-cart-btn" name="clear_filters">Eliminar filtros</button>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for p in products %}
+        <div class="col-6 col-md-4 col-lg-3 mb-4">
+          <div class="card h-100">
+            {% if p.image %}
+            <img src="{{ p.image }}" class="card-img-top" alt="{{ product.name }}" style="height: 150px;">
+            {% else %}
+            <div class="missing-image">Imagen no disponible</div>
+            {% endif %}
+            <div class="card-body text-center">
+              <div class="row">
+                <h5 class="card-title">{{ p.name }}</h5>
+              </div>
+              <div class="row">
+                <p class="card-text description">{{ p.description }}</p>
+              </div>
+              <div class="row">
+                <p class="card-text price">Precio: ${{ p.price }}</p>
+              </div>
+            </div>
+            <div class="card-footer" style="text-align: center;">
+              <a href="{% url 'product_detail' p.id %}" class="btn btn-default bg-primary-3 view-detail-btn" data-product-id="{{ p.id }}">Ver Detalle</a>
+              <a href="{% url 'Add' p.id %}"
+                class="btn btn-default bg-primary-3 view-detail-btn add-to-cart-btn">Agregar al Carrito</a>           
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
